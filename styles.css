@@ -18,6 +18,7 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -34,6 +35,10 @@ body {
     radial-gradient(circle at 86% 10%, rgba(243, 201, 76, 0.28), transparent 22%),
     linear-gradient(135deg, #fffaf4 0%, #fff1f7 46%, #eefaff 100%);
   overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
 }
 
 body::before,
@@ -216,6 +221,7 @@ h3 {
   border-radius: 8px;
   font-weight: 900;
   cursor: pointer;
+  touch-action: manipulation;
   box-shadow: 5px 5px 0 rgba(43, 36, 48, 0.18);
   transition:
     transform 180ms ease,
@@ -287,6 +293,7 @@ h3 {
   position: relative;
   justify-self: center;
   width: min(100%, 520px);
+  max-width: 100%;
   padding: 16px;
   border: 2px dashed rgba(43, 36, 48, 0.24);
   border-radius: 8px;
@@ -393,17 +400,28 @@ h3 {
 }
 
 .album-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(18px, 4vw, 34px);
+  column-count: 3;
+  column-gap: 18px;
 }
 
 .memory-card {
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 18px;
   overflow: hidden;
   border: 2px solid rgba(43, 36, 48, 0.16);
   border-radius: 8px;
   background: white;
-  box-shadow: var(--shadow);
+  box-shadow: 0 16px 38px rgba(66, 43, 84, 0.13);
+  break-inside: avoid;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.memory-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 48px rgba(66, 43, 84, 0.17);
 }
 
 .photo-wrap {
@@ -413,7 +431,7 @@ h3 {
 .memory-card img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: auto;
   object-fit: cover;
 }
 
@@ -436,7 +454,7 @@ h3 {
 }
 
 .memory-caption {
-  padding: 20px;
+  padding: 16px;
 }
 
 .memory-caption span {
@@ -462,14 +480,6 @@ h3 {
 
 .text-button:hover {
   color: var(--pink);
-}
-
-.tilt-left {
-  transform: rotate(-1.2deg);
-}
-
-.tilt-right {
-  transform: rotate(1.2deg);
 }
 
 .quest-section {
@@ -667,15 +677,19 @@ h3 {
 
   .hero {
     min-height: auto;
+    padding-top: 34px;
   }
 
   .hero-stage {
     width: min(100%, 460px);
   }
 
-  .stats-strip,
+  .stats-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .album-grid {
-    grid-template-columns: 1fr;
+    column-count: 2;
   }
 
   .section-heading.with-tools {
@@ -683,11 +697,210 @@ h3 {
     flex-direction: column;
   }
 
-  .tilt-left,
-  .tilt-right,
   .hero-stage,
   .note {
     transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  body::before,
+  body::after {
+    display: none;
+  }
+
+  .topbar {
+    position: static;
+    width: min(100% - 24px, 1160px);
+    margin-top: 12px;
+    padding: 10px;
+  }
+
+  .brand {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-links {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .nav-links a {
+    min-height: 42px;
+    display: grid;
+    place-items: center;
+    padding: 8px 6px;
+    background: rgba(255, 255, 255, 0.55);
+    text-align: center;
+  }
+
+  main,
+  .footer {
+    width: min(100% - 24px, 1160px);
+  }
+
+  .hero {
+    gap: 26px;
+    padding: 30px 0 38px;
+  }
+
+  h1 {
+    font-size: 38px;
+    line-height: 1.08;
+  }
+
+  h2 {
+    font-size: 30px;
+  }
+
+  h3 {
+    font-size: 21px;
+  }
+
+  .hero-text {
+    font-size: 16px;
+    line-height: 1.72;
+  }
+
+  .hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-top: 22px;
+  }
+
+  .button {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .hero-stage {
+    padding: 10px;
+    box-shadow: 0 16px 42px rgba(66, 43, 84, 0.15);
+  }
+
+  .status-window {
+    top: 18px;
+    left: 18px;
+    min-width: 104px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .loading-tag {
+    right: 18px;
+    bottom: 24px;
+    max-width: calc(100% - 36px);
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+
+  .stats-strip {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .stats-strip div {
+    padding: 12px;
+  }
+
+  .stats-strip strong {
+    font-size: 18px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .album-section,
+  .quest-section,
+  .letter-section {
+    padding-top: 58px;
+  }
+
+  .section-heading {
+    margin-bottom: 18px;
+  }
+
+  .section-heading.with-tools {
+    gap: 12px;
+  }
+
+  .edit-hint {
+    margin: -4px 0 16px;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .album-grid {
+    column-count: 1;
+  }
+
+  .memory-card {
+    margin-bottom: 14px;
+  }
+
+  .memory-card:hover {
+    transform: none;
+  }
+
+  .memory-caption {
+    padding: 14px;
+  }
+
+  .photo-tool {
+    right: 10px;
+    bottom: 10px;
+    min-height: 40px;
+    padding-inline: 12px;
+  }
+
+  .quest-board,
+  .love-meter,
+  .note {
+    box-shadow: 0 14px 38px rgba(66, 43, 84, 0.12);
+  }
+
+  .quest-board,
+  .love-meter {
+    padding: 16px;
+  }
+
+  .quest-item {
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 52px;
+    padding: 12px;
+  }
+
+  .quest-item input {
+    margin-top: 2px;
+  }
+
+  .remove-quest {
+    width: 34px;
+    height: 34px;
+  }
+
+  .love-meter strong {
+    font-size: 36px;
+  }
+
+  .letter-section {
+    gap: 18px;
+    padding-bottom: 54px;
+  }
+
+  .note {
+    padding: 30px 18px 22px;
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .footer {
+    margin-bottom: 18px;
+    padding-top: 16px;
+    font-size: 13px;
   }
 }
 
@@ -695,20 +908,11 @@ h3 {
   main,
   .topbar,
   .footer {
-    width: min(100% - 20px, 1160px);
-  }
-
-  .nav-links {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .nav-links a {
-    padding-inline: 8px;
+    width: min(100% - 18px, 1160px);
   }
 
   h1 {
-    font-size: 40px;
+    font-size: 34px;
   }
 
   .hero-text {
@@ -716,14 +920,78 @@ h3 {
   }
 
   .status-window {
-    left: 8px;
+    left: 14px;
   }
 
   .loading-tag {
-    right: 8px;
+    right: 14px;
   }
 
   .footer {
     flex-direction: column;
+  }
+
+  .album-grid {
+    column-count: 1;
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar,
+  main,
+  .footer {
+    width: min(100% - 14px, 1160px);
+  }
+
+  .topbar {
+    padding: 8px;
+  }
+
+  .brand {
+    font-size: 14px;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 26px;
+  }
+
+  .nav-links a {
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  h2 {
+    font-size: 26px;
+  }
+
+  .stats-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stage {
+    padding: 8px;
+  }
+
+  .status-window,
+  .loading-tag {
+    position: static;
+    display: inline-grid;
+    margin: 0 0 8px;
+  }
+
+  .loading-tag {
+    margin: 8px 0 0;
+  }
+
+  .quest-item {
+    font-size: 14px;
+  }
+
+  .note {
+    padding-inline: 14px;
   }
 }

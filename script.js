@@ -1,22 +1,63 @@
 const colors = ["#f35e9b", "#8067e8", "#54b9df", "#63c7a2", "#f3c94c"];
 const symbols = ["LOVE", "+1", "+520", "HP", "100%"];
 const editStorageKey = "couple-page-edits-v2";
-const photoStorageKey = "couple-page-photos-v2";
+const legacyPhotoStorageKey = "couple-page-photos-v2";
 const questStorageKey = "couple-page-quests-v2";
+const photoDbName = "couple-page-photo-db";
+const photoStoreName = "photos";
 const anniversaryDate = new Date("2025-05-16T00:00:00+08:00");
+
+const storyTemplates = [
+  {
+    title: "靠近一点的瞬间",
+    desc: "这一刻不用说太多，画面已经替小扬和小冉把喜欢藏好了。",
+  },
+  {
+    title: "今天也有认真想你",
+    desc: "普通日子里的小小记录，后来都会变成一翻到就会笑的证据。",
+  },
+  {
+    title: "小冉限定存档",
+    desc: "这是小扬想反复保存的一页，连空气里都像有一点甜。",
+  },
+  {
+    title: "见面副本完成",
+    desc: "两个人待在一起的时候，时间总是跑得很快，但回忆会留下来。",
+  },
+  {
+    title: "心动进度 +1",
+    desc: "这张照片负责证明：喜欢不是突然满格，是每天都在偷偷增加。",
+  },
+  {
+    title: "只属于我们的可爱",
+    desc: "别人看到的是照片，小扬和小冉看到的是那天的心情和温度。",
+  },
+  {
+    title: "把今天装进口袋",
+    desc: "以后再打开这一页，就能重新捡到当时的开心。",
+  },
+  {
+    title: "恋爱主线继续中",
+    desc: "从2025年5月16日开始，每一张新照片都是下一章的开头。",
+  },
+];
 
 const defaultPhotos = [
   {
-    src: "assets/couple-game-day.jpg",
+    id: "default-1",
+    src: "images/couple/couple-game-day.jpg",
     label: "Chapter 01",
     title: "小扬和小冉的第一张主线 CG",
     desc: "从2025年5月16日开始，普通的一天也可以被保存成很可爱的纪念。",
+    builtIn: true,
   },
   {
-    src: "assets/couple-cute-win.jpg",
+    id: "default-2",
+    src: "images/couple/couple-cute-win.jpg",
     label: "Chapter 02",
     title: "You Win, 小冉!",
     desc: "小扬想把每一次靠近都写进存档，奖励是更多拥抱、偏爱和见面。",
+    builtIn: true,
   },
 ];
 
@@ -37,9 +78,11 @@ const meterFill = document.querySelector("#meterFill");
 const meterPercent = document.querySelector("#meterPercent");
 const anniversaryDays = document.querySelector("#anniversaryDays");
 
-let photos = loadJson(photoStorageKey, defaultPhotos);
+let photoDb;
+let photos = [];
 let quests = loadJson(questStorageKey, defaultQuests);
 let edits = loadJson(editStorageKey, {});
+let activeObjectUrls = [];
 
 function loadJson(key, fallback) {
   try {
@@ -51,7 +94,121 @@ function loadJson(key, fallback) {
 }
 
 function saveJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn("Local text save failed. Photo migration can still continue.", error);
+  }
+}
+
+function openPhotoDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(photoDbName, 1);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(photoStoreName)) {
+        db.createObjectStore(photoStoreName, { keyPath: "id" });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function photoTransaction(mode = "readonly") {
+  return photoDb.transaction(photoStoreName, mode).objectStore(photoStoreName);
+}
+
+function getAllStoredPhotos() {
+  return new Promise((resolve, reject) => {
+    const request = photoTransaction().getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function putStoredPhoto(photo) {
+  return new Promise((resolve, reject) => {
+    const request = photoTransaction("readwrite").put(photo);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function deleteStoredPhoto(id) {
+  return new Promise((resolve, reject) => {
+    const request = photoTransaction("readwrite").delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function loadPhotos() {
+  const storedPhotos = await getAllStoredPhotos();
+
+  if (!storedPhotos.length) {
+    const legacyPhotos = loadJson(legacyPhotoStorageKey, defaultPhotos);
+    const migratedPhotos = legacyPhotos.map((photo, index) => normalizePhoto(photo, index));
+
+    for (const photo of migratedPhotos) {
+      await putStoredPhoto(photo);
+    }
+
+    localStorage.removeItem(legacyPhotoStorageKey);
+    return migratedPhotos;
+  }
+
+  const normalizedPhotos = storedPhotos
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((photo, index) => normalizePhoto(photo, index));
+
+  for (const photo of normalizedPhotos) {
+    await putStoredPhoto(photo);
+  }
+
+  return normalizedPhotos;
+}
+
+function normalizePhoto(photo, index) {
+  const template = storyTemplates[Math.max(0, index - 2) % storyTemplates.length];
+  const isPlaceholderTitle = !photo.title || photo.title === "新的回忆";
+  const isPlaceholderDesc = !photo.desc || photo.desc === "点这里写下这张照片背后的故事。";
+
+  return {
+    ...photo,
+    src: normalizeImagePath(photo.src),
+    id: photo.id || `photo-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+    order: Number.isFinite(photo.order) ? photo.order : index,
+    label: photo.label || `Chapter ${String(index + 1).padStart(2, "0")}`,
+    title: isPlaceholderTitle ? template.title : photo.title,
+    desc: isPlaceholderDesc ? template.desc : photo.desc,
+  };
+}
+
+function normalizeImagePath(src) {
+  if (typeof src !== "string") return src;
+
+  const filename = src.split(/[\\/]/).pop()?.toLowerCase();
+
+  if (filename === "couple-game-day.jpg") return "images/couple/couple-game-day.jpg";
+  if (filename === "couple-cute-win.jpg") return "images/couple/couple-cute-win.jpg";
+
+  return src;
+}
+
+function createNewPhoto(src, index) {
+  const template = storyTemplates[Math.max(0, index - 2) % storyTemplates.length];
+
+  return {
+    id: `photo-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+    order: index,
+    src,
+    label: `Chapter ${String(index + 1).padStart(2, "0")}`,
+    title: template.title,
+    desc: template.desc,
+  };
 }
 
 function createFloatingHeart(x, y) {
@@ -105,13 +262,17 @@ function updateAnniversaryDays() {
 }
 
 function renderPhotos() {
+  activeObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  activeObjectUrls = [];
   albumGrid.innerHTML = "";
+
   photos.forEach((photo, index) => {
+    const imageSrc = getPhotoImageSrc(photo);
     const card = document.createElement("article");
-    card.className = `memory-card ${index % 2 ? "tilt-right" : "tilt-left"}`;
+    card.className = "memory-card";
     card.innerHTML = `
       <div class="photo-wrap">
-        <img src="${photo.src}" alt="情侣相册照片" />
+        <img src="${imageSrc}" alt="情侣相册照片" loading="lazy" />
         <label class="photo-tool">
           更换
           <input type="file" accept="image/*" data-photo-replace="${index}" />
@@ -128,26 +289,32 @@ function renderPhotos() {
     card.querySelectorAll("[data-photo-field]").forEach((field) => {
       field.addEventListener("input", () => {
         photos[index][field.dataset.photoField] = field.innerText.trim();
-        saveJson(photoStorageKey, photos);
+        putStoredPhoto(photos[index]);
       });
     });
 
-    card.querySelector("[data-photo-replace]").addEventListener("change", (event) => {
+    card.querySelector("[data-photo-replace]").addEventListener("change", async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      readFileAsDataUrl(file).then((src) => {
-        photos[index].src = src;
-        saveJson(photoStorageKey, photos);
-        renderPhotos();
-      });
+      const src = await readFileAsDataUrl(file);
+      photos[index].src = src;
+      await putStoredPhoto(photos[index]);
+      renderPhotos();
     });
 
-    card.querySelector("[data-photo-delete]").addEventListener("click", () => {
+    card.querySelector("[data-photo-delete]").addEventListener("click", async () => {
+      await deleteStoredPhoto(photos[index].id);
       photos.splice(index, 1);
-      if (!photos.length) photos = [...defaultPhotos];
-      saveJson(photoStorageKey, photos);
+
+      if (!photos.length) {
+        photos = defaultPhotos.map((photo, photoIndex) => normalizePhoto(photo, photoIndex));
+        for (const fallbackPhoto of photos) {
+          await putStoredPhoto(fallbackPhoto);
+        }
+      }
+
+      await reindexPhotos();
       renderPhotos();
-      renderHeroImage();
     });
 
     albumGrid.appendChild(card);
@@ -157,7 +324,29 @@ function renderPhotos() {
 }
 
 function renderHeroImage() {
-  heroImage.src = photos[0]?.src || defaultPhotos[0].src;
+  heroImage.src = getPhotoImageSrc(photos[0] || defaultPhotos[0]);
+}
+
+function getPhotoImageSrc(photo) {
+  if (photo.src instanceof Blob) {
+    const url = URL.createObjectURL(photo.src);
+    activeObjectUrls.push(url);
+    return url;
+  }
+
+  return photo.src || defaultPhotos[0].src;
+}
+
+async function reindexPhotos() {
+  photos = photos.map((photo, index) => ({
+    ...photo,
+    order: index,
+    label: photo.label || `Chapter ${String(index + 1).padStart(2, "0")}`,
+  }));
+
+  for (const photo of photos) {
+    await putStoredPhoto(photo);
+  }
 }
 
 function readFileAsDataUrl(file) {
@@ -173,14 +362,24 @@ function resizeImage(src) {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
-      const maxSide = 1600;
+      const maxSide = 1800;
       const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(image.width * scale);
       canvas.height = Math.round(image.height * scale);
       const context = canvas.getContext("2d");
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", 0.88));
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Image compression failed"));
+          }
+        },
+        "image/jpeg",
+        0.82,
+      );
     };
     image.onerror = reject;
     image.src = src;
@@ -233,19 +432,25 @@ photoInput.addEventListener("change", async (event) => {
   const files = [...event.target.files];
   if (!files.length) return;
 
-  for (const file of files) {
-    const src = await readFileAsDataUrl(file);
-    photos.push({
-      src,
-      label: `Chapter ${String(photos.length + 1).padStart(2, "0")}`,
-      title: "新的回忆",
-      desc: "点这里写下这张照片背后的故事。",
-    });
-  }
+  photoInput.disabled = true;
 
-  saveJson(photoStorageKey, photos);
-  renderPhotos();
-  event.target.value = "";
+  try {
+    for (const file of files) {
+      const src = await readFileAsDataUrl(file);
+      const photo = createNewPhoto(src, photos.length);
+      photos.push(photo);
+      await putStoredPhoto(photo);
+    }
+
+    await reindexPhotos();
+    renderPhotos();
+  } catch (error) {
+    window.alert("这次照片保存失败了。可以先少选几张，或换成体积小一点的图片再试。");
+    console.error(error);
+  } finally {
+    photoInput.disabled = false;
+    event.target.value = "";
+  }
 });
 
 addQuestButton.addEventListener("click", () => {
@@ -272,7 +477,20 @@ surpriseButton.addEventListener("click", () => {
   }
 });
 
-setupEditableText();
-updateAnniversaryDays();
-renderPhotos();
-renderQuests();
+async function init() {
+  setupEditableText();
+  updateAnniversaryDays();
+  renderQuests();
+
+  try {
+    photoDb = await openPhotoDb();
+    photos = await loadPhotos();
+    renderPhotos();
+  } catch (error) {
+    console.error(error);
+    photos = defaultPhotos;
+    renderPhotos();
+  }
+}
+
+init();
