@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our Little Love Game</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="paper-grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="回到首页">
+        <span class="brand-mark">HP</span>
+        <span>100/100</span>
+      </a>
+      <nav class="nav-links" aria-label="页面导航">
+        <a href="#album">相册</a>
+        <a href="#quest">任务</a>
+        <a href="#letter">便签</a>
+      </nav>
+    </header>
+
+    <main id="home">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Lv.99 Couple Archive</p>
+          <h1 contenteditable="true" data-edit-key="heroTitle">小扬和小冉的恋爱存档</h1>
+          <p class="hero-text" contenteditable="true" data-edit-key="heroText">
+            从2025年5月16日开始，小扬和小冉把普通日子慢慢变成只属于两个人的可爱副本。
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#album">打开回忆</a>
+            <button class="button ghost" type="button" id="surpriseButton">撒一点心动</button>
+          </div>
+        </div>
+
+        <div class="hero-stage" aria-label="情侣插画展示">
+          <div class="status-window">
+            <span>LOVE</span>
+            <strong>999%</strong>
+          </div>
+          <img class="hero-image" id="heroImage" src="assets/couple-game-day.jpg" alt="手绘风情侣合照插画" />
+          <div class="loading-tag">LOADING... 95%</div>
+        </div>
+      </section>
+
+      <section class="stats-strip" aria-label="恋爱状态">
+        <div>
+          <span class="stat-label" contenteditable="true" data-edit-key="statMoodLabel">主角玩家</span>
+          <strong contenteditable="true" data-edit-key="statMoodValue">小扬 × 小冉</strong>
+        </div>
+        <div>
+          <span class="stat-label" contenteditable="true" data-edit-key="statLevelLabel">纪念日</span>
+          <strong contenteditable="true" data-edit-key="statLevelValue">2025.05.16</strong>
+        </div>
+        <div>
+          <span class="stat-label" contenteditable="true" data-edit-key="statBonusLabel">相恋天数</span>
+          <strong contenteditable="true" data-edit-key="statBonusValue" id="anniversaryDays">第377天</strong>
+        </div>
+        <div>
+          <span class="stat-label" contenteditable="true" data-edit-key="statSaveLabel">存档状态</span>
+          <strong contenteditable="true" data-edit-key="statSaveValue">永久保存</strong>
+        </div>
+      </section>
+
+      <section class="album-section" id="album">
+        <div class="section-heading with-tools">
+          <div>
+            <p class="eyebrow">Memory Album</p>
+            <h2 contenteditable="true" data-edit-key="albumTitle">小扬和小冉的主线 CG</h2>
+          </div>
+          <label class="button add-photo">
+            添加照片
+            <input id="photoInput" type="file" accept="image/*" multiple />
+          </label>
+        </div>
+        <p class="edit-hint">照片、标题和说明都可以直接编辑；新增照片会保存在这个浏览器里。</p>
+        <div class="album-grid" id="albumGrid"></div>
+      </section>
+
+      <section class="quest-section" id="quest">
+        <div class="quest-board">
+          <div class="section-heading compact with-tools">
+            <div>
+              <p class="eyebrow">Today's Plan</p>
+              <h2 contenteditable="true" data-edit-key="questTitle">小扬和小冉的任务清单</h2>
+            </div>
+            <button class="icon-button" type="button" id="addQuestButton" aria-label="添加任务">+</button>
+          </div>
+          <div id="questList"></div>
+        </div>
+
+        <div class="love-meter" aria-label="心动进度">
+          <span class="meter-title" contenteditable="true" data-edit-key="meterTitle">心动进度</span>
+          <div class="meter-track">
+            <div class="meter-fill" id="meterFill"></div>
+          </div>
+          <strong id="meterPercent">100%</strong>
+          <p contenteditable="true" data-edit-key="meterText">任务完成越多，页面会越甜。现在已经超标啦。</p>
+        </div>
+      </section>
+
+      <section class="letter-section" id="letter">
+        <div class="letter-copy">
+          <p class="eyebrow">Private Note</p>
+          <h2 contenteditable="true" data-edit-key="noteTitle">给小扬和小冉的小纸条</h2>
+          <p contenteditable="true" data-edit-key="noteIntro">
+            这里可以继续改成你们自己的悄悄话，也可以记下每一年5月16日想一起做的事。
+          </p>
+        </div>
+        <article class="note" aria-label="可编辑小纸条">
+          <span class="note-pin"></span>
+          <p contenteditable="true" data-edit-key="noteLineOne">To 小冉：</p>
+          <p contenteditable="true" data-edit-key="noteBody">
+            从2025年5月16日开始，很多平凡的小事都因为你变得值得保存。希望小扬和小冉一直像这两张画一样，幼稚一点、开心一点、坚定一点。
+          </p>
+          <p class="signature" contenteditable="true" data-edit-key="noteSign">From 小扬</p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span contenteditable="true" data-edit-key="footerLeft">小扬 & 小冉 Love Save Slot</span>
+      <span contenteditable="true" data-edit-key="footerRight">Press Start to continue forever</span>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
